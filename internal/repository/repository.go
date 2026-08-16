@@ -184,7 +184,7 @@ func (r *Repository) ListContext(ctx context.Context, filter ListFilter) ([]mode
 
 	var total int64
 	countQuery := "SELECT COUNT(*) FROM workouts" + where
-	if err := r.db.QueryRow(countQuery, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count workouts: %w", err)
 	}
 
@@ -197,7 +197,7 @@ func (r *Repository) ListContext(ctx context.Context, filter ListFilter) ([]mode
 		args = append(args, filter.PageSize, offset)
 	}
 
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list workouts: %w", err)
 	}

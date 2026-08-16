@@ -139,13 +139,7 @@ func (s *Service) ListContext(ctx context.Context, params ListParams) (Paginated
 		pageSize = maxPageSize
 	}
 
-	items, total, err := s.repo.ListContext(context.Background(), repository.ListFilter{
-		SportType: normalizeSportType(params.SportType),
-		StartDate: params.StartDate,
-		EndDate:   params.EndDate,
-		Page:      page,
-		PageSize:  pageSize,
-	})
+	items, total, err := s.repo.ListContext(ctx, newListContextFilter(ctx, params, page, pageSize))
 	if err != nil {
 		return PaginatedWorkouts{}, err
 	}
