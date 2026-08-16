@@ -47,14 +47,16 @@ type WorkoutRepository interface {
 }
 
 type Service struct {
-	repo WorkoutRepository
-	now  func() time.Time
+	repo            WorkoutRepository
+	now             func() time.Time
+	duplicatePolicy duplicatePolicy
 }
 
 func New(repo WorkoutRepository) *Service {
 	return &Service{
-		repo: repo,
-		now:  time.Now,
+		repo:            repo,
+		now:             time.Now,
+		duplicatePolicy: newDuplicatePolicy(repo),
 	}
 }
 
@@ -86,12 +88,8 @@ func (s *Service) Create(input WorkoutInput) (model.Workout, error) {
 		return model.Workout{}, err
 	}
 
-	duplicate, err := s.duplicateExists(workout)
-	if err != nil {
+	if err := s.duplicatePolicy.reject(workout); err != nil {
 		return model.Workout{}, err
-	}
-	if duplicate {
-		return model.Workout{}, fmt.Errorf("%w: workout already exists", ErrDuplicateWorkout)
 	}
 
 	return s.repo.Create(workout)
