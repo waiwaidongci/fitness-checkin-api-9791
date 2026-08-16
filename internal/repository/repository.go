@@ -65,7 +65,7 @@ func (r *Repository) migrate() error {
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", entry.Name(), err)
 		}
-		for _, statement := range splitStatements(string(content)) {
+		for _, statement := range splitSQLStatements(string(content)) {
 			if _, err := r.db.Exec(statement); err != nil {
 				return fmt.Errorf("run migration %s: %w", entry.Name(), err)
 			}
@@ -74,14 +74,93 @@ func (r *Repository) migrate() error {
 	return nil
 }
 
-func splitStatements(content string) []string {
-	raw := strings.Split(content, ";")
-	statements := make([]string, 0, len(raw))
-	for _, part := range raw {
-		statement := strings.TrimSpace(part)
-		if statement != "" {
-			statements = append(statements, statement)
+func splitSQLStatements(content string) []string {
+	statements := make([]string, 0)
+	start := 0
+	inSingleQuote := false
+	inDoubleQuote := false
+	inBacktick := false
+	inLineComment := false
+	inBlockComment := false
+
+	for i := 0; i < len(content); i++ {
+		ch := content[i]
+		next := byte(0)
+		if i+1 < len(content) {
+			next = content[i+1]
 		}
+
+		if inLineComment {
+			if ch == '\n' {
+				inLineComment = false
+			}
+			continue
+		}
+		if inBlockComment {
+			if ch == '*' && next == '/' {
+				inBlockComment = false
+				i++
+			}
+			continue
+		}
+		if inSingleQuote {
+			if ch == '\'' && next == '\'' {
+				i++
+			} else if ch == '\'' {
+				inSingleQuote = false
+			}
+			continue
+		}
+		if inDoubleQuote {
+			if ch == '"' && next == '"' {
+				i++
+			} else if ch == '"' {
+				inDoubleQuote = false
+			}
+			continue
+		}
+		if inBacktick {
+			if ch == '`' && next == '`' {
+				i++
+			} else if ch == '`' {
+				inBacktick = false
+			}
+			continue
+		}
+
+		if ch == '-' && next == '-' {
+			inLineComment = true
+			i++
+			continue
+		}
+		if ch == '/' && next == '*' {
+			inBlockComment = true
+			i++
+			continue
+		}
+		if ch == '\'' {
+			inSingleQuote = true
+			continue
+		}
+		if ch == '"' {
+			inDoubleQuote = true
+			continue
+		}
+		if ch == '`' {
+			inBacktick = true
+			continue
+		}
+		if ch == ';' {
+			statement := strings.TrimSpace(content[start:i])
+			if statement != "" {
+				statements = append(statements, statement)
+			}
+			start = i + 1
+		}
+	}
+
+	if tail := strings.TrimSpace(content[start:]); tail != "" {
+		statements = append(statements, tail)
 	}
 	return statements
 }
