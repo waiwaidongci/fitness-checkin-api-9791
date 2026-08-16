@@ -50,16 +50,18 @@ type Service struct {
 	repo      WorkoutRepository
 	now       func() time.Time
 	recent    *cache.RecentWeek
+	freshness cache.FreshnessPolicy
 	stop      chan struct{}
 	startOnce sync.Once
 }
 
 func New(repo WorkoutRepository) *Service {
 	return &Service{
-		repo:   repo,
-		now:    time.Now,
-		recent: cache.NewRecentWeek(),
-		stop:   make(chan struct{}),
+		repo:      repo,
+		now:       time.Now,
+		recent:    cache.NewRecentWeek(),
+		freshness: cache.DefaultFreshnessPolicy(),
+		stop:      make(chan struct{}),
 	}
 }
 
@@ -159,6 +161,13 @@ func (s *Service) List(params ListParams) (PaginatedWorkouts, error) {
 }
 
 func (s *Service) RecentWeek() ([]model.Workout, error) {
+	if s.freshness.Allows(s.recent.RefreshedAt(), s.now()) {
+		return s.recent.Snapshot(), nil
+	}
+	return s.refreshRecentWeekNow()
+}
+
+func (s *Service) refreshRecentWeekNow() ([]model.Workout, error) {
 	today := s.now().Format(model.DateLayout)
 	start := s.now().AddDate(0, 0, -6).Format(model.DateLayout)
 	items, err := s.repo.ListByDateRange(start, today)
@@ -192,12 +201,7 @@ func (s *Service) refreshRecentWeek() {
 		case <-s.stop:
 			return
 		case <-ticker.C:
-			today := s.now().Format(model.DateLayout)
-			start := s.now().AddDate(0, 0, -6).Format(model.DateLayout)
-			items, err := s.repo.ListByDateRange(start, today)
-			if err == nil {
-				s.recent.Replace(items)
-			}
+			_, _ = s.refreshRecentWeekNow()
 		}
 	}
 }

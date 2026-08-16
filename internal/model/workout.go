@@ -21,3 +21,9 @@ type SportSummary struct {
 	TotalCalories float64 `json:"total_calories"`
 	WorkoutCount  int     `json:"workout_count"`
 }
+
+func CloneWorkouts(items []Workout) []Workout {
+	out := make([]Workout, len(items))
+	copy(out, items)
+	return out
+}
