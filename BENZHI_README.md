@@ -1,4 +1,4 @@
-# fitness-checkin-api-9791
+# fitness-checkin-api__002
 
 ## 标准命令
 
