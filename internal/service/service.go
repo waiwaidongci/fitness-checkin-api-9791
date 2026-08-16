@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ErrNotFound     = errors.New("workout not found")
-	ErrInvalidInput = errors.New("invalid input")
-	ErrInvalidRange = errors.New("invalid date range")
+	ErrNotFound         = errors.New("workout not found")
+	ErrInvalidInput     = errors.New("invalid input")
+	ErrInvalidRange     = errors.New("invalid date range")
+	ErrDuplicateWorkout = errors.New("duplicate workout")
 )
 
 const (
@@ -40,6 +41,7 @@ type WorkoutRepository interface {
 	Update(model.Workout) (model.Workout, error)
 	Delete(int64) error
 	List(repository.ListFilter) ([]model.Workout, int64, error)
+	FindByUniqueKey(string, string, string) (model.Workout, error)
 	ListByDateRange(string, string) ([]model.Workout, error)
 	AggregateBySportType(string, string) ([]model.SportSummary, error)
 }
@@ -83,6 +85,15 @@ func (s *Service) Create(input WorkoutInput) (model.Workout, error) {
 	if err != nil {
 		return model.Workout{}, err
 	}
+
+	duplicate, err := s.duplicateExists(workout)
+	if err != nil {
+		return model.Workout{}, err
+	}
+	if duplicate {
+		return model.Workout{}, fmt.Errorf("%w: workout already exists", ErrDuplicateWorkout)
+	}
+
 	return s.repo.Create(workout)
 }
 

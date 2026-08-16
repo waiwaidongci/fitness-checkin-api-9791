@@ -162,6 +162,8 @@ func respondServiceError(c *gin.Context, err error) {
 		respondError(c, http.StatusBadRequest, err.Error())
 	case errors.Is(err, service.ErrInvalidRange):
 		respondError(c, http.StatusBadRequest, "start_date must not be after end_date")
+	case errors.Is(err, service.ErrDuplicateWorkout):
+		respondError(c, http.StatusConflict, "workout already exists")
 	default:
 		respondError(c, http.StatusInternalServerError, "internal server error")
 	}
