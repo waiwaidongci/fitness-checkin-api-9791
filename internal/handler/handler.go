@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -107,7 +108,7 @@ func (h *WorkoutHandler) List(c *gin.Context) {
 		Page:      queryInt(c, "page", 0),
 		PageSize:  queryInt(c, "page_size", 0),
 	}
-	result, err := h.service.List(params)
+	result, err := h.service.ListContext(context.Background(), params)
 	if err != nil {
 		respondServiceError(c, err)
 		return

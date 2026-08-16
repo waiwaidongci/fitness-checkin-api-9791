@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -175,6 +176,10 @@ type ListFilter struct {
 }
 
 func (r *Repository) List(filter ListFilter) ([]model.Workout, int64, error) {
+	return r.ListContext(context.Background(), filter)
+}
+
+func (r *Repository) ListContext(ctx context.Context, filter ListFilter) ([]model.Workout, int64, error) {
 	where, args := buildWhere(filter.SportType, filter.StartDate, filter.EndDate)
 
 	var total int64

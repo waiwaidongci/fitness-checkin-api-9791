@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -40,6 +41,7 @@ type WorkoutRepository interface {
 	Update(model.Workout) (model.Workout, error)
 	Delete(int64) error
 	List(repository.ListFilter) ([]model.Workout, int64, error)
+	ListContext(context.Context, repository.ListFilter) ([]model.Workout, int64, error)
 	ListByDateRange(string, string) ([]model.Workout, error)
 	AggregateBySportType(string, string) ([]model.SportSummary, error)
 }
@@ -117,6 +119,10 @@ func (s *Service) Delete(id int64) error {
 }
 
 func (s *Service) List(params ListParams) (PaginatedWorkouts, error) {
+	return s.ListContext(context.Background(), params)
+}
+
+func (s *Service) ListContext(ctx context.Context, params ListParams) (PaginatedWorkouts, error) {
 	if err := validateRange(params.StartDate, params.EndDate); err != nil {
 		return PaginatedWorkouts{}, err
 	}
@@ -133,7 +139,7 @@ func (s *Service) List(params ListParams) (PaginatedWorkouts, error) {
 		pageSize = maxPageSize
 	}
 
-	items, total, err := s.repo.List(repository.ListFilter{
+	items, total, err := s.repo.ListContext(context.Background(), repository.ListFilter{
 		SportType: normalizeSportType(params.SportType),
 		StartDate: params.StartDate,
 		EndDate:   params.EndDate,
