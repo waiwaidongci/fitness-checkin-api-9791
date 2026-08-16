@@ -29,6 +29,8 @@ func main() {
 	defer repo.Close()
 
 	svc := service.New(repo)
+	svc.StartCacheRefresh()
+	defer svc.Close()
 	engine := router.Setup(svc)
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,

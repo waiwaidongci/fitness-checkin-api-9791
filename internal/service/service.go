@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"sync"
 	"time"
 
+	"fitness-checkin-api/internal/cache"
 	"fitness-checkin-api/internal/model"
 	"fitness-checkin-api/internal/repository"
 )
@@ -45,14 +47,19 @@ type WorkoutRepository interface {
 }
 
 type Service struct {
-	repo WorkoutRepository
-	now  func() time.Time
+	repo      WorkoutRepository
+	now       func() time.Time
+	recent    *cache.RecentWeek
+	stop      chan struct{}
+	startOnce sync.Once
 }
 
 func New(repo WorkoutRepository) *Service {
 	return &Service{
-		repo: repo,
-		now:  time.Now,
+		repo:   repo,
+		now:    time.Now,
+		recent: cache.NewRecentWeek(),
+		stop:   make(chan struct{}),
 	}
 }
 
@@ -154,7 +161,45 @@ func (s *Service) List(params ListParams) (PaginatedWorkouts, error) {
 func (s *Service) RecentWeek() ([]model.Workout, error) {
 	today := s.now().Format(model.DateLayout)
 	start := s.now().AddDate(0, 0, -6).Format(model.DateLayout)
-	return s.repo.ListByDateRange(start, today)
+	items, err := s.repo.ListByDateRange(start, today)
+	if err != nil {
+		return nil, err
+	}
+	s.recent.Replace(items)
+	return s.recent.Snapshot(), nil
+}
+
+func (s *Service) StartCacheRefresh() {
+	s.startOnce.Do(func() {
+		go s.refreshRecentWeek()
+	})
+}
+
+func (s *Service) Close() {
+	select {
+	case <-s.stop:
+	default:
+		close(s.stop)
+	}
+}
+
+func (s *Service) refreshRecentWeek() {
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-s.stop:
+			return
+		case <-ticker.C:
+			today := s.now().Format(model.DateLayout)
+			start := s.now().AddDate(0, 0, -6).Format(model.DateLayout)
+			items, err := s.repo.ListByDateRange(start, today)
+			if err == nil {
+				s.recent.Replace(items)
+			}
+		}
+	}
 }
 
 func (s *Service) SummaryBySportType(startDate, endDate string) ([]model.SportSummary, error) {
