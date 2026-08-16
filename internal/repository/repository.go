@@ -254,28 +254,6 @@ func (r *Repository) AggregateBySportType(startDate, endDate string) ([]model.Sp
 	return summaries, nil
 }
 
-func (r *Repository) SummaryForSportType(sportType string) (model.SportSummary, error) {
-	var summary model.SportSummary
-	err := r.db.QueryRow(
-		`SELECT sport_type, SUM(duration_minutes), SUM(calories), COUNT(*)
-		 FROM workouts WHERE sport_type = ?
-		 GROUP BY sport_type`,
-		sportType,
-	).Scan(
-		&summary.SportType,
-		&summary.TotalDuration,
-		&summary.TotalCalories,
-		&summary.WorkoutCount,
-	)
-	if errors.Is(err, sql.ErrNoRows) {
-		return model.SportSummary{SportType: sportType}, nil
-	}
-	if err != nil {
-		return model.SportSummary{}, fmt.Errorf("summary for sport type: %w", err)
-	}
-	return summary, nil
-}
-
 func buildWhere(sportType, startDate, endDate string) (string, []any) {
 	conditions := make([]string, 0, 3)
 	args := make([]any, 0, 3)

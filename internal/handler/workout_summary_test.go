@@ -13,7 +13,7 @@ func TestWorkoutSummaryEndpoint(t *testing.T) {
 	date := time.Now().Format("2006-01-02")
 	created := createWorkout(t, server.URL, "swimming", 20, date)
 
-	response, err := http.Get(server.URL + "/api/v1/workouts/" + formatID(created.ID) + "/summary")
+	response, err := http.Get(server.URL + "/api/v1/workouts/" + strconv.FormatInt(created.ID, 10) + "/summary")
 	if err != nil {
 		t.Fatalf("get workout summary: %v", err)
 	}
@@ -33,8 +33,4 @@ func TestWorkoutSummaryEndpoint(t *testing.T) {
 	if payload.TotalDurationMinutes != 20 || payload.TotalCalories != 180 || payload.WorkoutCount != 1 {
 		t.Fatalf("unexpected summary: %#v", payload)
 	}
-}
-
-func formatID(id int64) string {
-	return strconv.FormatInt(id, 10)
 }
