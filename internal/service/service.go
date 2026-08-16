@@ -42,6 +42,7 @@ type WorkoutRepository interface {
 	List(repository.ListFilter) ([]model.Workout, int64, error)
 	ListByDateRange(string, string) ([]model.Workout, error)
 	AggregateBySportType(string, string) ([]model.SportSummary, error)
+	SummaryForSportType(string) (model.SportSummary, error)
 }
 
 type Service struct {
@@ -92,6 +93,18 @@ func (s *Service) GetByID(id int64) (model.Workout, error) {
 		return model.Workout{}, mapRepositoryError(err)
 	}
 	return workout, nil
+}
+
+func (s *Service) WorkoutSummary(id int64) (*model.SportSummary, error) {
+	workout, err := s.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	summary, err := s.repo.SummaryForSportType(workout.SportType)
+	if err != nil {
+		return nil, err
+	}
+	return &summary, nil
 }
 
 func (s *Service) Update(id int64, input WorkoutInput) (model.Workout, error) {

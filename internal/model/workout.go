@@ -5,14 +5,15 @@ import "time"
 const DateLayout = "2006-01-02"
 
 type Workout struct {
-	ID              int64     `json:"id"`
-	SportType       string    `json:"sport_type"`
-	DurationMinutes int       `json:"duration_minutes"`
-	Calories        float64   `json:"calories"`
-	WorkoutDate     string    `json:"workout_date"`
-	Note            string    `json:"note"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID              int64         `json:"id"`
+	SportType       string        `json:"sport_type"`
+	DurationMinutes int           `json:"duration_minutes"`
+	Calories        float64       `json:"calories"`
+	WorkoutDate     string        `json:"workout_date"`
+	Note            string        `json:"note"`
+	CreatedAt       time.Time     `json:"created_at"`
+	UpdatedAt       time.Time     `json:"updated_at"`
+	Summary         *SportSummary `json:"summary,omitempty"`
 }
 
 type SportSummary struct {

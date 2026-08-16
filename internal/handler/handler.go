@@ -62,6 +62,23 @@ func (h *WorkoutHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, workout)
 }
 
+func (h *WorkoutHandler) WorkoutSummary(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	summary, err := h.service.WorkoutSummary(id)
+	if err != nil {
+		respondServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"total_duration_minutes": summary.TotalDuration,
+		"total_calories":         summary.TotalCalories,
+		"workout_count":          summary.WorkoutCount,
+	})
+}
+
 func (h *WorkoutHandler) Update(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {

@@ -18,6 +18,7 @@ func Setup(service *service.Service) *gin.Engine {
 		api.GET("/workouts", h.List)
 		api.GET("/workouts/recent-week", h.RecentWeek)
 		api.GET("/workouts/summary/by-sport-type", h.SummaryBySportType)
+		api.GET("/workouts/:id/summary", h.WorkoutSummary)
 		api.GET("/workouts/:id", h.Get)
 		api.POST("/workouts", h.Create)
 		api.PUT("/workouts/:id", h.Update)
